@@ -24,7 +24,7 @@ contract("DAppPay", (accounts) => {
       assert.equal(name, "DAppPay");
     });
 
-    it("accounts count is 0", async () => {
+    it("initially, accounts count is 0", async () => {
       const accountsCount = await dAppPay.accountsCount();
       assert.equal(accountsCount.toString(), "0");
     });
@@ -54,7 +54,7 @@ contract("DAppPay", (accounts) => {
     });
 
     it("creates account", async () => {
-      //   SUCCESS
+      /*  SUCCESS */
       assert.equal(accountsCount, 2, "accounts count is correct");
       const event = result.logs[0].args;
       //   console.log(event);
@@ -76,10 +76,54 @@ contract("DAppPay", (accounts) => {
         "account google id is correct"
       );
       assert.equal(event.isPrimaryAccount, false, "account is not primary");
+
+      /* FAILURE */
+      //   Account holder name is req
+      await dAppPay.createAccount(
+        "",
+        "abc@dpay",
+        9912283290,
+        "google-id-30",
+        "3455",
+        { from: deployer }
+      ).should.be.rejected;
+      //  Account number must be unique
+      await dAppPay.createAccount(
+        "Yoyoyoy",
+        "abc@dpay",
+        9912283290,
+        "google-id-30",
+        "3455",
+        { from: receiver }
+      ).should.be.rejected;
+    });
+
+    it("lists accounts", async () => {
+      //   SUCCESS
+      let account = await dAppPay.accounts(accountsCount);
+      //   console.log(account);
+      assert.equal(account.accountNo, sender, "account no. is correct");
+      assert.equal(
+        account.accountHolderName,
+        "Abhilash MH",
+        "account holder name is correct"
+      );
+      assert.equal(account.dpayId, "a7@dpay", "account dpay id is correct");
+      assert.equal(
+        account.phoneNo.toNumber(),
+        9939283292,
+        "account phone no. is correct"
+      );
+      assert.equal(
+        account.googleId,
+        "google-id-10",
+        "account google id is correct"
+      );
+      assert.equal(account.pin.toString(), "1234", "account pin is correct");
     });
 
     it("edit account", async () => {
-      //   SUCCESS
+      /*  SUCCESS */
       result = await dAppPay.editAccount(
         accountsCount,
         "A7 Abhilash",
@@ -113,42 +157,46 @@ contract("DAppPay", (accounts) => {
         "account google id is correct"
       );
       assert.equal(event.isPrimaryAccount, true, "account is primary");
-    });
 
-    // it("get all accounts", async () => {
-    //   //   SUCCESS
-    //   result = await dAppPay.getAllAccounts();
-    //   console.log(result);
-    //   assert.equal(result.length, 1, "accounts count is correct");
-    //   let account = result[0];
-    //   assert.equal(account.accountNo, sender, "account no. is correct");
-    //   assert.equal(
-    //     account.accountHolderName,
-    //     "Abhilash MH",
-    //     "account holder name is correct"
-    //   );
-    //   assert.equal(account.dpayId, "a7@dpay", "account dpay id is correct");
-    //   assert.equal(
-    //     event.phoneNo.toNumber(),
-    //     9939283292,
-    //     "account phone no. is correct"
-    //   );
-    //   assert.equal(
-    //     account.googleId,
-    //     "google-id-10",
-    //     "account google id is correct"
-    //   );
-    //   assert.equal(account.pin.toString(), "1234", "account pin is correct");
-    //   assert.equal(
-    //     account.balance.toString(),
-    //     web3.utils.toWei("100", "ether"),
-    //     "account balance is correct"
-    //   );
-    // });
+      /* FAILURE */
+      // invalid account id
+      await dAppPay.editAccount(
+        4,
+        "A7 Abhilash",
+        "a7abhilash@dpay",
+        9939283292,
+        "5678",
+        true,
+        { from: sender }
+      ).should.be.rejected;
+      // primary account status is required
+      await dAppPay.editAccount(
+        1,
+        "A7 Abhilash",
+        "a7abhilash@dpay",
+        9939283292,
+        "5678",
+        "",
+        { from: sender }
+      ).should.be.rejected;
+      // only account holder can edit the details
+      await dAppPay.editAccount(
+        4,
+        "A7 Abhilash",
+        "a7abhilash@dpay",
+        9939283292,
+        "5678",
+        true,
+        { from: receiver }
+      ).should.be.rejected;
+    });
   });
+
   describe("transaction", async () => {
-    let result;
+    let result, transactionsCount;
+
     it("send amount", async () => {
+      /* SUCCESS */
       let oldReceiverBalance;
       oldReceiverBalance = await web3.eth.getBalance(receiver);
       oldReceiverBalance = new web3.utils.BN(oldReceiverBalance);
@@ -157,9 +205,11 @@ contract("DAppPay", (accounts) => {
         from: sender,
         value: web3.utils.toWei("1.5", "ether"),
       });
+      transactionsCount = await dAppPay.transactionsCount();
 
       const event = result.logs[0].args;
       //   console.log(event);
+      assert.equal(transactionsCount, 1, "transaction count is correct");
       assert.equal(event.sender, sender, "sender is correct");
       assert.equal(event.receiver, receiver, "receiver is correct");
       assert.equal(
@@ -179,6 +229,31 @@ contract("DAppPay", (accounts) => {
       const expectedBalance = oldReceiverBalance.add(amountTransferred);
 
       assert.equal(newReceiverBalance.toString(), expectedBalance.toString());
+
+      /* FAILURE */
+      //   invalid sender account no.
+      await dAppPay.sendAmount(accounts[4], {
+        from: sender,
+        value: web3.utils.toWei("1.5", "ether"),
+      }).should.be.rejected;
+      //   invalid receiver account no.
+      await dAppPay.sendAmount(receiver, {
+        from: accounts[5],
+        value: web3.utils.toWei("1.5", "ether"),
+      }).should.be.rejected;
+    });
+
+    it("lists transactions", async () => {
+      //   SUCCESS
+      let transaction = await dAppPay.transactions(transactionsCount);
+      //   console.log(transaction);
+      assert.equal(transaction.sender, sender, "sender is correct");
+      assert.equal(transaction.receiver, receiver, "receiver is correct");
+      assert.equal(
+        transaction.amount.toString(),
+        web3.utils.toWei("1.5", "ether"),
+        "amount transferred is correct"
+      );
     });
   });
 });

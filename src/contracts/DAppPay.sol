@@ -19,6 +19,14 @@ contract DAppPay{
 	}
 
 	/* Store transaction history */
+	uint public transactionsCount;
+	mapping(uint => Transaction) public transactions;
+	struct Transaction{
+		address sender;
+		address payable receiver;
+		uint amount;
+		uint time;
+	}
 
 
 	constructor() public{
@@ -42,7 +50,7 @@ contract DAppPay{
 	/* Events */
 	event AccountCreated(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
 	event AccountEdited(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
-	event AmmountTransfered(address payable receiver, address sender, uint amount);
+	event AmmountTransfered(address sender, address payable receiver, uint amount);
 
 	function createAccount(string memory _accountHolderName, string memory _dpayId, uint _phoneNo, string memory _googleId, uint _pin) public onlyUniqiueAccount{
 		// Make sure the inputs exists
@@ -57,6 +65,8 @@ contract DAppPay{
 		accountsCount++;
 		accounts[accountsCount] = Account(msg.sender, _accountHolderName, _dpayId, _phoneNo, _googleId, _pin, false);
 		accountNumbers[msg.sender] = true;
+
+		// Trigger event
 		emit AccountCreated(msg.sender, _accountHolderName,_dpayId, _phoneNo, _googleId, false);
 	}
 
@@ -77,21 +87,30 @@ contract DAppPay{
 		// Make sure account address is msg.sender only
 		require(_account.accountNo == msg.sender, "Only account holder can edit the account details");
 
+		// Edit account
 		_account.accountHolderName = _accountHolderName;
 		_account.dpayId = _dpayId;
 		_account.phoneNo = _phoneNo;
 		_account.pin = _pin;
 		_account.isPrimaryAccount = _isPrimaryAccount;
 
+		// Store edited account
 		accounts[_accountId] = _account;
+
+		// Trigger event
 		emit AccountEdited(msg.sender, _account.accountHolderName, _account.dpayId, _account.phoneNo, _account.googleId, _account.isPrimaryAccount);
 	}
 
 	function sendAmount(address payable _receiver) public payable onlyExistingAccount{
-		// make sure receiver account address exists
+		// Make sure receiver account address exists
 		require(accountNumbers[_receiver], "Receiver account number is invalid!" );
 		
+		// Transfer amount to receiver
 		address(_receiver).transfer(msg.value);
-		emit AmmountTransfered(_receiver, msg.sender, msg.value);
+		transactionsCount++;
+		transactions[transactionsCount] = Transaction(msg.sender, _receiver, msg.value, block.timestamp);
+
+		// Trigger event
+		emit AmmountTransfered(msg.sender, _receiver, msg.value);
 	}
 }
