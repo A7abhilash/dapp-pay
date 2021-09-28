@@ -28,20 +28,17 @@ contract DAppPay{
 		uint time;
 	}
 
-
 	constructor() public{
 		name = "DAppPay";
 		accountsCount = 0;
 	}
 
 	/* Modifiers */
-	// Check if account exist
 	modifier onlyExistingAccount{
 		require(accountNumbers[msg.sender], 'Sender account number is invalid!');
       	_;
 	}
 
-	// Check if account is unique
 	modifier onlyUniqiueAccount{
 		require(!accountNumbers[msg.sender], 'Account number already exists!');
       	_;
@@ -52,6 +49,7 @@ contract DAppPay{
 	event AccountEdited(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
 	event AmmountTransfered(address sender, address payable receiver, uint amount);
 
+	/* Main Functions */
 	function createAccount(string memory _accountHolderName, string memory _dpayId, uint _phoneNo, string memory _googleId, string memory _pin) public onlyUniqiueAccount{
 		// Make sure the inputs exists
 		require(msg.sender != address(0x0), "Account no. is required");
@@ -121,7 +119,8 @@ contract DAppPay{
 		emit AmmountTransfered(msg.sender, _receiver, msg.value);
 	}
 
-	function _getAccount(address _accountNo) public view returns(Account memory){
+	/* Helper Functions */
+	function _getAccount(address _accountNo) private view returns(Account memory){
 		for(uint i=1; i<=accountsCount; i++){
 			if(accounts[i].accountNo == _accountNo){
 				return accounts[i];

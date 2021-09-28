@@ -270,13 +270,20 @@ contract("DAppPay", (accounts) => {
 
       /* FAILURE */
       //   invalid sender account no.
-      await dAppPay.sendAmount(accounts[4], {
+      await dAppPay.sendAmount(accounts[4], "5678", {
         from: sender,
         value: web3.utils.toWei("1.5", "ether"),
       }).should.be.rejected;
+
       //   invalid receiver account no.
-      await dAppPay.sendAmount(receiver, {
+      await dAppPay.sendAmount(receiver, "5678", {
         from: accounts[5],
+        value: web3.utils.toWei("1.5", "ether"),
+      }).should.be.rejected;
+
+      //   invalid sender's pin
+      await dAppPay.sendAmount(receiver, "1234", {
+        from: sender,
         value: web3.utils.toWei("1.5", "ether"),
       }).should.be.rejected;
     });
