@@ -96,6 +96,15 @@ contract("DAppPay", (accounts) => {
         "3455",
         { from: receiver }
       ).should.be.rejected;
+      //  Account pin must be 4 digits
+      await dAppPay.createAccount(
+        "Yoyoyoy",
+        "abc@dpay",
+        9912283290,
+        "google-id-30",
+        "3455534",
+        { from: receiver }
+      ).should.be.rejected;
     });
 
     it("lists accounts", async () => {
@@ -119,7 +128,18 @@ contract("DAppPay", (accounts) => {
         "google-id-10",
         "account google id is correct"
       );
-      assert.equal(account.pin.toString(), "1234", "account pin is correct");
+      assert.equal(
+        account.pin.toString(),
+        web3.utils.keccak256("1234"),
+        "account pin is correct"
+      );
+
+      //   account = await dAppPay._getAccount(sender, { from: sender });
+      //   console.log(account);
+      //   console.log(account.accountHolderName);
+      //   let pin = await dAppPay._getAccountPin(sender, { from: sender });
+      //   console.log(pin);
+      //   assert.equal(pin, web3.utils.keccak256("1234"), "account pin is correct");
     });
 
     it("edit account", async () => {
@@ -129,6 +149,7 @@ contract("DAppPay", (accounts) => {
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
+        "1234",
         "5678",
         true,
         { from: sender }
@@ -165,26 +186,43 @@ contract("DAppPay", (accounts) => {
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
+        "1234",
         "5678",
         true,
         { from: sender }
       ).should.be.rejected;
+
+      // invalid pin
+      await dAppPay.editAccount(
+        4,
+        "A7 Abhilash",
+        "a7abhilash@dpay",
+        9939283292,
+        "1093",
+        "5678",
+        true,
+        { from: receiver }
+      ).should.be.rejected;
+
       // primary account status is required
       await dAppPay.editAccount(
         1,
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
+        "1234",
         "5678",
         "",
         { from: sender }
       ).should.be.rejected;
+
       // only account holder can edit the details
       await dAppPay.editAccount(
         4,
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
+        "1234",
         "5678",
         true,
         { from: receiver }
@@ -201,7 +239,7 @@ contract("DAppPay", (accounts) => {
       oldReceiverBalance = await web3.eth.getBalance(receiver);
       oldReceiverBalance = new web3.utils.BN(oldReceiverBalance);
 
-      result = await dAppPay.sendAmount(receiver, {
+      result = await dAppPay.sendAmount(receiver, "5678", {
         from: sender,
         value: web3.utils.toWei("1.5", "ether"),
       });
