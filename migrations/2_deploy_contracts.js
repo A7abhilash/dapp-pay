@@ -1,5 +1,5 @@
-const TodoList = artifacts.require("TodoList");
+const DAppPay = artifacts.require("DAppPay");
 
-module.exports = function(deployer) {
-  deployer.deploy(TodoList);
+module.exports = function (deployer) {
+  deployer.deploy(DAppPay);
 };
