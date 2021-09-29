@@ -4,7 +4,7 @@ require("chai").use(require("chai-as-promised")).should();
 
 contract("DAppPay", (accounts) => {
   let dAppPay;
-  const [deployer, sender, receiver] = accounts;
+  const [deployer, sender, receiver, receiver_2, receiver_3] = accounts;
 
   before(async () => {
     dAppPay = await DAppPay.deployed();
@@ -28,6 +28,11 @@ contract("DAppPay", (accounts) => {
       const accountsCount = await dAppPay.accountsCount();
       assert.equal(accountsCount.toString(), "0");
     });
+
+    it("initially, transactions count is 0", async () => {
+      const transactionsCount = await dAppPay.transactionsCount();
+      assert.equal(transactionsCount.toString(), "0");
+    });
   });
 
   describe("accounts", async () => {
@@ -42,6 +47,22 @@ contract("DAppPay", (accounts) => {
         "8676",
         { from: receiver }
       );
+      await dAppPay.createAccount(
+        "Receiver-2",
+        "r2@dpay",
+        8769283290,
+        "google-id-22",
+        "6345",
+        { from: receiver_2 }
+      );
+      await dAppPay.createAccount(
+        "Receiver-3",
+        "r3@dpay",
+        9939281123,
+        "google-id-23",
+        "2322",
+        { from: receiver_3 }
+      );
       result = await dAppPay.createAccount(
         "Abhilash MH",
         "a7@dpay",
@@ -55,7 +76,6 @@ contract("DAppPay", (accounts) => {
 
     it("creates account", async () => {
       /*  SUCCESS */
-      assert.equal(accountsCount, 2, "accounts count is correct");
       const event = result.logs[0].args;
       //   console.log(event);
       assert.equal(event.accountNo, sender, "account no. is correct");
@@ -109,6 +129,7 @@ contract("DAppPay", (accounts) => {
 
     it("lists accounts", async () => {
       //   SUCCESS
+      assert.equal(accountsCount, 4, "accounts count is correct");
       let account = await dAppPay.accounts(accountsCount);
       //   console.log(account);
       assert.equal(account.accountNo, sender, "account no. is correct");
@@ -266,11 +287,15 @@ contract("DAppPay", (accounts) => {
 
       const expectedBalance = oldReceiverBalance.add(amountTransferred);
 
-      assert.equal(newReceiverBalance.toString(), expectedBalance.toString());
+      assert.equal(
+        newReceiverBalance.toString(),
+        expectedBalance.toString(),
+        "amount has been transferred"
+      );
 
       /* FAILURE */
       //   invalid sender account no.
-      await dAppPay.sendAmount(accounts[4], "5678", {
+      await dAppPay.sendAmount(accounts[9], "5678", {
         from: sender,
         value: web3.utils.toWei("1.5", "ether"),
       }).should.be.rejected;
@@ -299,6 +324,150 @@ contract("DAppPay", (accounts) => {
         web3.utils.toWei("1.5", "ether"),
         "amount transferred is correct"
       );
+    });
+
+    it("requests amount", async () => {
+      /* SUCCESS */
+      await dAppPay.requestAmount(sender, web3.utils.toWei("2", "ether"), {
+        from: receiver_2,
+      });
+      result = await dAppPay.requestAmount(
+        sender,
+        web3.utils.toWei("2", "ether"),
+        {
+          from: receiver_3,
+        }
+      );
+      const event = result.logs[0].args;
+      // console.log(event);
+      assert.equal(
+        event.requestingTo,
+        sender,
+        "sender(requesting-to) is correct"
+      );
+      assert.equal(
+        event.requestingFrom,
+        receiver_3,
+        "receiver(requesting-from) is correct"
+      );
+      assert.equal(
+        event.amount,
+        web3.utils.toWei("2", "ether"),
+        "amount is correct"
+      );
+      assert.equal(event.isFulfilled, false, "request is not fulfilled");
+      assert.equal(event.isRejected, false, "request is not rejected");
+
+      /* FAILURE */
+      // Invalid account number
+      await dAppPay.requestAmount(deployer, web3.utils.toWei("2", "ether"), {
+        from: receiver,
+      }).should.be.rejected;
+
+      // Invalid requested amount
+      await dAppPay.requestAmount(sender, web3.utils.toWei("0", "ether"), {
+        from: receiver,
+      }).should.be.rejected;
+    });
+
+    it("fulfill requested amount", async () => {
+      let oldReceiverBalance;
+      oldReceiverBalance = await web3.eth.getBalance(receiver_2);
+      oldReceiverBalance = new web3.utils.BN(oldReceiverBalance);
+
+      result = await dAppPay.fulfillRequestedAmount(1, "5678", {
+        from: sender,
+        value: web3.utils.toWei("2", "ether"),
+      });
+      // console.log(result.logs);
+      const event = result.logs[1].args;
+      // console.log(event);
+      assert.equal(
+        event.requestingTo,
+        sender,
+        "sender(requesting-to) is correct"
+      );
+      assert.equal(
+        event.requestingFrom,
+        receiver_2,
+        "receiver(requesting-from) is correct"
+      );
+      assert.equal(
+        event.amount,
+        web3.utils.toWei("2", "ether"),
+        "amount is correct"
+      );
+      assert.equal(event.isFulfilled, true, "request is fulfilled");
+      assert.equal(event.isRejected, false, "request is not rejected");
+
+      // Check receiver balance
+      let newReceiverBalance;
+      newReceiverBalance = await web3.eth.getBalance(receiver_2);
+      newReceiverBalance = new web3.utils.BN(newReceiverBalance);
+
+      let amountTransferred;
+      amountTransferred = web3.utils.toWei("2", "Ether");
+      amountTransferred = new web3.utils.BN(amountTransferred);
+
+      const expectedBalance = oldReceiverBalance.add(amountTransferred);
+
+      assert.equal(
+        newReceiverBalance.toString(),
+        expectedBalance.toString(),
+        "amount has been transferred"
+      );
+    });
+
+    it("reject requested amount", async () => {
+      /* SUCCESS */
+      let oldReceiverBalance;
+      oldReceiverBalance = await web3.eth.getBalance(receiver_3);
+      oldReceiverBalance = new web3.utils.BN(oldReceiverBalance);
+      let requestId = await dAppPay.requestsCount();
+      result = await dAppPay.rejectRequestedAmount(requestId, {
+        from: sender,
+      });
+      const event = result.logs[0].args;
+      // console.log(event);
+      assert.equal(
+        event.requestingTo,
+        sender,
+        "sender(requesting-to) is correct"
+      );
+      assert.equal(
+        event.requestingFrom,
+        receiver_3,
+        "receiver(requesting-from) is correct"
+      );
+      assert.equal(
+        event.amount,
+        web3.utils.toWei("2", "ether"),
+        "amount is correct"
+      );
+      assert.equal(event.isFulfilled, false, "request is not fulfilled");
+      assert.equal(event.isRejected, true, "request is rejected");
+
+      // Check receiver balance
+      let newReceiverBalance;
+      newReceiverBalance = await web3.eth.getBalance(receiver_3);
+      newReceiverBalance = new web3.utils.BN(newReceiverBalance);
+      assert.equal(
+        oldReceiverBalance.toString(),
+        newReceiverBalance.toString(),
+        "amount has not been transferred"
+      );
+
+      /* FAILURE */
+      // Invalid request id
+      await dAppPay.requestsCount();
+      result = await dAppPay.rejectRequestedAmount(3, {
+        from: sender,
+      }).should.be.rejected;
+
+      // Request-to account no. is different
+      result = await dAppPay.rejectRequestedAmount(requestId, {
+        from: deployer,
+      }).should.be.rejected;
     });
   });
 });

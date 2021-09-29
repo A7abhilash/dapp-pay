@@ -18,6 +18,18 @@ contract DAppPay{
 		bool isPrimaryAccount;
 	}
 
+	/* Store request-money */
+	uint public requestsCount;
+	mapping(uint => Request) public requests;
+	struct Request{
+		address requestingTo;
+		address payable requestingFrom;
+		uint amount;
+		uint time;
+		bool isFulfilled;
+		bool isRejected;
+	}
+
 	/* Store transaction history */
 	uint public transactionsCount;
 	mapping(uint => Transaction) public transactions;
@@ -48,6 +60,9 @@ contract DAppPay{
 	event AccountCreated(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
 	event AccountEdited(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
 	event AmmountTransfered(address sender, address payable receiver, uint amount);
+	event AmmountRequested(address requestingTo, address payable requestingFrom, uint amount, bool isFulfilled, bool isRejected);
+	event FulFillAmmountRequested(address requestingTo, address payable requestingFrom, uint amount, bool isFulfilled, bool isRejected);
+	event RejectAmmountRequested(address requestingTo, address payable requestingFrom, uint amount, bool isFulfilled, bool isRejected);
 
 	/* Main Functions */
 	function createAccount(string memory _accountHolderName, string memory _dpayId, uint _phoneNo, string memory _googleId, string memory _pin) public onlyUniqiueAccount{
@@ -119,21 +134,100 @@ contract DAppPay{
 		emit AmmountTransfered(msg.sender, _receiver, msg.value);
 	}
 
+	function requestAmount(address _requestTo, uint _amount) public onlyExistingAccount{
+		// Make sure requested account address exists
+		require(accountNumbers[_requestTo], "Requested account number is invalid!" );
+		// Make sure requested amount is valid
+		require(_amount > 0, "Requested amount must be more than 0 ETH!" );
+
+		// Add request
+		requestsCount++;
+		requests[requestsCount] = Request(_requestTo, msg.sender, _amount, block.timestamp, false, false);
+
+		// Trigger event
+		emit AmmountRequested(_requestTo, msg.sender, _amount, false, false);
+	}
+
+	function fulfillRequestedAmount(uint requestId, string memory _pin) public payable onlyExistingAccount{
+		// Make sure request id is valid
+		require(requestId > 0 && requestId <= requestsCount, "Invalid request id");
+
+		Request memory _request = requests[requestId];
+
+		// Make sure request is not rejected
+		require(!_request.isRejected, "Request is already rejected");
+
+		// Make sure requested address is changing the data
+		require(_request.requestingTo == msg.sender, "Requested account no. is not yours");
+
+		// Make transaction
+		sendAmount(_request.requestingFrom, _pin);
+
+		// Mark request as fulfilled
+		_request.isFulfilled = true;
+		requests[requestId] = _request;
+		
+		// Trigger event
+		emit FulFillAmmountRequested(_request.requestingTo, _request.requestingFrom, _request.amount, _request.isFulfilled, _request.isRejected);
+	}
+
+	function rejectRequestedAmount(uint requestId) public onlyExistingAccount{
+		// Make sure request id is valid
+		require(requestId > 0 && requestId <= requestsCount, "Invalid request id");
+		
+		Request memory _request = requests[requestId];
+
+		// Make sure request is not fulfilled
+		require(!_request.isFulfilled, "Request is already fulfilled");
+
+		// Make sure requested address is changing the data
+		require(_request.requestingTo == msg.sender, "Requested account no. is not yours");
+
+
+		// Mark request as rejected
+		_request.isRejected = true;
+		requests[requestId] = _request;
+		
+		// Trigger event
+		emit RejectAmmountRequested(_request.requestingTo, _request.requestingFrom, _request.amount, _request.isFulfilled, _request.isRejected);
+	}
+
 	/* Helper Functions */
-	function _getAccount(address _accountNo) private view returns(Account memory){
+	function _getAccountUsingAccountNumber(address _accountNo) public view onlyExistingAccount returns(Account memory){
 		for(uint i=1; i<=accountsCount; i++){
 			if(accounts[i].accountNo == _accountNo){
-				return accounts[i];
+				Account memory _account = accounts[i];
+				_account.pin = "";
+				return _account;
 			}
 		}
 	}
 
-	function _getAccountPin(address _accountNo) private view returns(bytes32){
+	function _getAccountUsingDpayId(string memory _dpayid) public view onlyExistingAccount returns(Account memory){
+		for(uint i=1; i<=accountsCount; i++){
+			if(accounts[i].dpayid == _dpayid){
+				Account memory _account = accounts[i];
+				_account.pin = "";
+				return _account;
+			}
+		}
+	}
+
+	function _getAccountUsingPhoneNumber(uint _phoneNo) public view onlyExistingAccount returns(Account memory){
+		for(uint i=1; i<=accountsCount; i++){
+			if(accounts[i].phoneNo == _phoneNo){
+				Account memory _account = accounts[i];
+				_account.pin = "";
+				return _account;
+			}
+		}
+	}
+
+	function _getAccountPin(address _accountNo) private view onlyExistingAccount returns(bytes32){
 		for(uint i=1; i<=accountsCount; i++){
 			if(accounts[i].accountNo == _accountNo){
 				return accounts[i].pin;
 			}
 		}
-		return "";
 	}
 }
