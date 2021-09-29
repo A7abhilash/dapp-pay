@@ -9,6 +9,7 @@ contract DAppPay{
 	uint public accountsCount;
 	mapping(uint => Account) public accounts;
 	struct Account{
+		uint accountId;
 		address payable accountNo;
 		string accountHolderName;
 		string dpayId;
@@ -55,10 +56,10 @@ contract DAppPay{
 		require(!accountNumbers[msg.sender], 'Account number already exists!');
       	_;
 	}
-
+	
 	/* Events */
-	event AccountCreated(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
-	event AccountEdited(address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
+	event AccountCreated(uint indexed accountId, address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
+	event AccountEdited(uint indexed accountId, address payable accountNo, string accountHolderName, string dpayId, uint phoneNo, string googleId, bool isPrimaryAccount);
 	event AmmountTransfered(address sender, address payable receiver, uint amount);
 	event AmmountRequested(address requestingTo, address payable requestingFrom, uint amount, bool isFulfilled, bool isRejected);
 	event FulFillAmmountRequested(address requestingTo, address payable requestingFrom, uint amount, bool isFulfilled, bool isRejected);
@@ -74,20 +75,31 @@ contract DAppPay{
 		require(bytes(_googleId).length > 0, "Account google id is required");
 		require(bytes(_pin).length == 4, "Valid account pin(4 digits) is required");
 
+		// Make sure dpay id is unique
+		Account memory _account = _getAccountUsingDpayId(_dpayId);
+		if(bytes(_account.dpayId).length != 0){
+			revert("Dpay id is taken");
+		}
+
 		// Add account
 		accountsCount++;
-		accounts[accountsCount] = Account(msg.sender, _accountHolderName, _dpayId, _phoneNo, _googleId, keccak256(bytes(_pin)), false);
+		accounts[accountsCount] = Account(accountsCount, msg.sender, _accountHolderName, _dpayId, _phoneNo, _googleId, keccak256(bytes(_pin)), false);
 		accountNumbers[msg.sender] = true;
 
 		// Trigger event
-		emit AccountCreated(msg.sender, _accountHolderName,_dpayId, _phoneNo, _googleId, false);
+		emit AccountCreated(accountsCount, msg.sender, _accountHolderName,_dpayId, _phoneNo, _googleId, false);
 	}
 
-	function editAccount(uint _accountId, string memory _accountHolderName, string memory _dpayId, uint _phoneNo, string memory _oldPin, string memory _newPin, bool _isPrimaryAccount) public onlyExistingAccount{
-		// Make sure account id is valid
-		require(_accountId > 0 && _accountId <= accountsCount, "Account is invalid");
+	function editAccount(string memory _accountHolderName, string memory _dpayId, uint _phoneNo, string memory _oldPin, string memory _newPin, bool _isPrimaryAccount) public onlyExistingAccount{
+		// TODO Make sure dpay id is unique
+		Account memory _account = _getAccountUsingDpayId(_dpayId);
+		if(bytes(_account.dpayId).length != 0){
+			if(_account.accountNo != msg.sender){
+				revert("Dpay id is taken");
+			}
+		}
 
-		Account memory _account = accounts[_accountId];
+		_account = _getAccountUsingAccountNumber(msg.sender);
 
 		// Make sure account pin is same as the pin entered by the user(sender)
 		require(_getAccountPin(msg.sender) == keccak256(bytes(_oldPin)), "Pin is wrong!");
@@ -111,11 +123,22 @@ contract DAppPay{
 		_account.pin = keccak256(bytes(_newPin));
 		_account.isPrimaryAccount = _isPrimaryAccount;
 
+		// TODO If _isPrimaryAccount==true then set _isPrimaryAccount=false in other account's of same user
+		for (uint i = 1; i <= accountsCount; i++) {
+			if(keccak256(bytes(accounts[i].googleId)) == keccak256(bytes(_account.googleId))){
+				if(accounts[i].accountNo != msg.sender){
+					if(accounts[i].isPrimaryAccount){
+						accounts[i].isPrimaryAccount = false;
+					}
+				}
+			}
+		}
+
 		// Store edited account
-		accounts[_accountId] = _account;
+		accounts[_account.accountId] = _account;
 
 		// Trigger event
-		emit AccountEdited(msg.sender, _account.accountHolderName, _account.dpayId, _account.phoneNo, _account.googleId, _account.isPrimaryAccount);
+		emit AccountEdited(_account.accountId, msg.sender, _account.accountHolderName, _account.dpayId, _account.phoneNo, _account.googleId, _account.isPrimaryAccount);
 	}
 
 	function sendAmount(address payable _receiver, string memory _pin) public payable onlyExistingAccount{
@@ -193,31 +216,31 @@ contract DAppPay{
 	}
 
 	/* Helper Functions */
-	function _getAccountUsingAccountNumber(address _accountNo) public view onlyExistingAccount returns(Account memory){
+	function _getAccountUsingAccountNumber(address _accountNo) public view returns(Account memory){
 		for(uint i=1; i<=accountsCount; i++){
 			if(accounts[i].accountNo == _accountNo){
 				Account memory _account = accounts[i];
-				_account.pin = "";
+				delete _account.pin;
 				return _account;
 			}
 		}
 	}
 
-	function _getAccountUsingDpayId(string memory _dpayid) public view onlyExistingAccount returns(Account memory){
+	function _getAccountUsingDpayId(string memory _dpayId) public view returns(Account memory){
 		for(uint i=1; i<=accountsCount; i++){
-			if(accounts[i].dpayid == _dpayid){
+			if(keccak256(bytes(accounts[i].dpayId)) == keccak256(bytes(_dpayId))){
 				Account memory _account = accounts[i];
-				_account.pin = "";
+				delete _account.pin;
 				return _account;
 			}
 		}
 	}
 
-	function _getAccountUsingPhoneNumber(uint _phoneNo) public view onlyExistingAccount returns(Account memory){
+	function _getAccountUsingPhoneNumber(uint _phoneNo) public view returns(Account memory){
 		for(uint i=1; i<=accountsCount; i++){
 			if(accounts[i].phoneNo == _phoneNo){
 				Account memory _account = accounts[i];
-				_account.pin = "";
+				delete _account.pin;
 				return _account;
 			}
 		}

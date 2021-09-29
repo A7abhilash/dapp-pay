@@ -4,7 +4,7 @@ require("chai").use(require("chai-as-promised")).should();
 
 contract("DAppPay", (accounts) => {
   let dAppPay;
-  const [deployer, sender, receiver, receiver_2, receiver_3] = accounts;
+  const [deployer, _xyz, sender, receiver, receiver_2, receiver_3] = accounts;
 
   before(async () => {
     dAppPay = await DAppPay.deployed();
@@ -33,6 +33,11 @@ contract("DAppPay", (accounts) => {
       const transactionsCount = await dAppPay.transactionsCount();
       assert.equal(transactionsCount.toString(), "0");
     });
+
+    it("initially, requests count is 0", async () => {
+      const requestsCount = await dAppPay.requestsCount();
+      assert.equal(requestsCount.toString(), "0");
+    });
   });
 
   describe("accounts", async () => {
@@ -59,7 +64,7 @@ contract("DAppPay", (accounts) => {
         "Receiver-3",
         "r3@dpay",
         9939281123,
-        "google-id-23",
+        "google-id-22",
         "2322",
         { from: receiver_3 }
       );
@@ -78,6 +83,7 @@ contract("DAppPay", (accounts) => {
       /*  SUCCESS */
       const event = result.logs[0].args;
       //   console.log(event);
+      assert.equal(event.accountId, 4, "account id is correct");
       assert.equal(event.accountNo, sender, "account no. is correct");
       assert.equal(
         event.accountHolderName,
@@ -98,6 +104,16 @@ contract("DAppPay", (accounts) => {
       assert.equal(event.isPrimaryAccount, false, "account is not primary");
 
       /* FAILURE */
+      // Dpay id must be unique
+      await dAppPay.createAccount(
+        "Hello world",
+        "hw@dpay",
+        9939283290,
+        "google-id-20",
+        "8676",
+        { from: receiver }
+      ).should.be.rejected;
+
       //   Account holder name is req
       await dAppPay.createAccount(
         "",
@@ -107,6 +123,7 @@ contract("DAppPay", (accounts) => {
         "3455",
         { from: deployer }
       ).should.be.rejected;
+
       //  Account number must be unique
       await dAppPay.createAccount(
         "Yoyoyoy",
@@ -116,6 +133,7 @@ contract("DAppPay", (accounts) => {
         "3455",
         { from: receiver }
       ).should.be.rejected;
+
       //  Account pin must be 4 digits
       await dAppPay.createAccount(
         "Yoyoyoy",
@@ -165,8 +183,19 @@ contract("DAppPay", (accounts) => {
 
     it("edit account", async () => {
       /*  SUCCESS */
+      // No change in dpay id of same account
+      await dAppPay.editAccount(
+        "Hello Ji",
+        "hw@dpay",
+        9939283290,
+        "8676",
+        "8676",
+        false,
+        { from: receiver }
+      );
+
+      // Change everything
       result = await dAppPay.editAccount(
-        accountsCount,
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
@@ -177,6 +206,7 @@ contract("DAppPay", (accounts) => {
       );
       const event = result.logs[0].args;
       //   console.log(event);
+      assert.equal(event.accountId, 4, "account id is correct");
       assert.equal(event.accountNo, sender, "account no. is correct");
       assert.equal(
         event.accountHolderName,
@@ -200,22 +230,50 @@ contract("DAppPay", (accounts) => {
       );
       assert.equal(event.isPrimaryAccount, true, "account is primary");
 
-      /* FAILURE */
-      // invalid account id
+      // Check primary account changes
       await dAppPay.editAccount(
-        4,
+        "Receiver-2",
+        "r2@dpay",
+        8769283290,
+        "6345",
+        "6345",
+        true,
+        { from: receiver_2 }
+      );
+      await dAppPay.editAccount(
+        "Receiver-3",
+        "r3@dpay",
+        8769283290,
+        "2322",
+        "2322",
+        true,
+        { from: receiver_3 }
+      );
+      let account_2 = await dAppPay._getAccountUsingAccountNumber(receiver_2);
+      // console.log(account_2);
+      let account_3 = await dAppPay._getAccountUsingAccountNumber(receiver_3);
+      // console.log(account_3);
+      assert.equal(
+        account_2.isPrimaryAccount,
+        false,
+        "receiver 2 is not primary"
+      );
+      assert.equal(account_3.isPrimaryAccount, true, "receiver 3 is primary");
+
+      /* FAILURE */
+      // Dpay id must be valid
+      await dAppPay.editAccount(
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
         "1234",
         "5678",
         true,
-        { from: sender }
+        { from: receiver }
       ).should.be.rejected;
 
       // invalid pin
       await dAppPay.editAccount(
-        4,
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
@@ -227,7 +285,6 @@ contract("DAppPay", (accounts) => {
 
       // primary account status is required
       await dAppPay.editAccount(
-        1,
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
@@ -239,7 +296,6 @@ contract("DAppPay", (accounts) => {
 
       // only account holder can edit the details
       await dAppPay.editAccount(
-        4,
         "A7 Abhilash",
         "a7abhilash@dpay",
         9939283292,
@@ -248,6 +304,150 @@ contract("DAppPay", (accounts) => {
         true,
         { from: receiver }
       ).should.be.rejected;
+
+      // dpay id must be unique
+      await dAppPay.editAccount(
+        "A7 Abhilash",
+        "hw@dpay",
+        9939283292,
+        "1234",
+        "5678",
+        true,
+        { from: receiver }
+      ).should.be.rejected;
+    });
+
+    it("get account using account no.", async () => {
+      /*  SUCCESS */
+      let account = await dAppPay._getAccountUsingAccountNumber(sender, {
+        from: receiver,
+      });
+      // console.log(account);
+      assert.equal(account.accountNo, sender, "account no. is correct");
+      assert.equal(
+        account.accountHolderName,
+        "A7 Abhilash",
+        "account holder name is correct"
+      );
+      assert.equal(
+        account.dpayId,
+        "a7abhilash@dpay",
+        "account dpay id is correct"
+      );
+      assert.equal(
+        account.phoneNo,
+        "9939283292",
+        "account phone no. is correct"
+      );
+      assert.equal(
+        account.googleId,
+        "google-id-10",
+        "account google id is correct"
+      );
+      assert.equal(
+        account.pin,
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "account pin is empty"
+      );
+      assert.equal(account.isPrimaryAccount, true, "account is primary");
+      account = await dAppPay._getAccountUsingAccountNumber(accounts[9], {
+        from: receiver,
+      });
+
+      /* FAILURE */
+      // invalid account number
+      account = await dAppPay._getAccountUsingAccountNumber(accounts[9], {
+        from: sender,
+      });
+      assert.equal(
+        account.accountNo,
+        0x0,
+        "account not found using account no."
+      );
+    });
+
+    it("get account using dpay id.", async () => {
+      /*  SUCCESS */
+      let account = await dAppPay._getAccountUsingDpayId("a7abhilash@dpay", {
+        from: receiver,
+      });
+      // console.log(account);
+      assert.equal(account.accountNo, sender, "account no. is correct");
+      assert.equal(
+        account.accountHolderName,
+        "A7 Abhilash",
+        "account holder name is correct"
+      );
+      assert.equal(
+        account.dpayId,
+        "a7abhilash@dpay",
+        "account dpay id is correct"
+      );
+      assert.equal(
+        account.phoneNo,
+        "9939283292",
+        "account phone no. is correct"
+      );
+      assert.equal(
+        account.googleId,
+        "google-id-10",
+        "account google id is correct"
+      );
+      assert.equal(
+        account.pin,
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "account pin is empty"
+      );
+      assert.equal(account.isPrimaryAccount, true, "account is primary");
+
+      /* FAILURE */
+      // invalid account number
+      account = await dAppPay._getAccountUsingDpayId("fdw@dpayid", {
+        from: sender,
+      });
+      assert.equal(account.dpayId, "", "account not found using dpay id");
+    });
+
+    it("get account using phone no.", async () => {
+      /*  SUCCESS */
+      let account = await dAppPay._getAccountUsingPhoneNumber(9939283292, {
+        from: receiver,
+      });
+      // console.log(account);
+      assert.equal(account.accountNo, sender, "account no. is correct");
+      assert.equal(
+        account.accountHolderName,
+        "A7 Abhilash",
+        "account holder name is correct"
+      );
+      assert.equal(
+        account.dpayId,
+        "a7abhilash@dpay",
+        "account dpay id is correct"
+      );
+      assert.equal(
+        account.phoneNo,
+        "9939283292",
+        "account phone no. is correct"
+      );
+      assert.equal(
+        account.googleId,
+        "google-id-10",
+        "account google id is correct"
+      );
+      assert.equal(
+        account.pin,
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "account pin is empty"
+      );
+      assert.equal(account.isPrimaryAccount, true, "account is primary");
+
+      /* FAILURE */
+      // invalid account number
+      account = await dAppPay._getAccountUsingPhoneNumber(23823821038, {
+        from: sender,
+      });
+      assert.equal(account.phoneNo, 0, "account not found using phone no.");
     });
   });
 
