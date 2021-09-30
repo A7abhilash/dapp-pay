@@ -1,7 +1,9 @@
 import React from "react";
 import Identicon from "identicon.js";
+import { useBlockchain } from "../contexts/BlockchainContext";
 
-function Navbar({ account }) {
+function Navbar() {
+  const { account } = useBlockchain();
   return (
     <nav className="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
       <div className="container d-block d-md-flex align-items-center justify-content-between">
