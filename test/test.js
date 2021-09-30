@@ -4,7 +4,7 @@ require("chai").use(require("chai-as-promised")).should();
 
 contract("DAppPay", (accounts) => {
   let dAppPay;
-  const [deployer, _xyz, sender, receiver, receiver_2, receiver_3] = accounts;
+  const [deployer, sender, receiver, receiver_2, receiver_3] = accounts;
 
   before(async () => {
     dAppPay = await DAppPay.deployed();

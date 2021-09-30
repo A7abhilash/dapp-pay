@@ -91,7 +91,7 @@ contract DAppPay{
 	}
 
 	function editAccount(string memory _accountHolderName, string memory _dpayId, uint _phoneNo, string memory _oldPin, string memory _newPin, bool _isPrimaryAccount) public onlyExistingAccount{
-		// TODO Make sure dpay id is unique
+		// Make sure dpay id is unique
 		Account memory _account = _getAccountUsingDpayId(_dpayId);
 		if(bytes(_account.dpayId).length != 0){
 			if(_account.accountNo != msg.sender){
@@ -123,7 +123,7 @@ contract DAppPay{
 		_account.pin = keccak256(bytes(_newPin));
 		_account.isPrimaryAccount = _isPrimaryAccount;
 
-		// TODO If _isPrimaryAccount==true then set _isPrimaryAccount=false in other account's of same user
+		// If _isPrimaryAccount==true then set _isPrimaryAccount=false in other account's of same user
 		for (uint i = 1; i <= accountsCount; i++) {
 			if(keccak256(bytes(accounts[i].googleId)) == keccak256(bytes(_account.googleId))){
 				if(accounts[i].accountNo != msg.sender){
