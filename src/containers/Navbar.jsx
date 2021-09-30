@@ -1,29 +1,12 @@
 import React from "react";
-import Identicon from "identicon.js";
-import { useBlockchain } from "../contexts/BlockchainContext";
 
 function Navbar() {
-  const { account } = useBlockchain();
   return (
-    <nav className="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
-      <div className="container d-block d-md-flex align-items-center justify-content-between">
-        <div className="navbar-brand col-sm-3 col-md-2 mr-0">DApp Pay</div>
-        <div>
-          <span className="text-info">{account}</span>
-          {account && (
-            <img
-              className="ml-2"
-              width="30"
-              height="30"
-              src={`data:image/png;base64,${new Identicon(
-                account,
-                30
-              ).toString()}`}
-              alt="Avatar"
-            />
-          )}
-        </div>
-      </div>
+    <nav className="p-1 sticky-top bg-gray">
+      <p className="mb-0 text-center text-danger">
+        <strong>Note:</strong> Connect to appropriate account in MetaMask while
+        creating accounts or during transaction!!!
+      </p>
     </nav>
   );
 }

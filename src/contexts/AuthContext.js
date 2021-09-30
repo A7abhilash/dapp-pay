@@ -57,11 +57,13 @@ function AuthProvider({ children }) {
       } else {
         setUser(null);
         setAccessToken(null);
+        localStorage.removeItem("accessToken");
       }
     } catch (error) {
       console.log(error);
       setAccessToken(null);
       setUser(null);
+      localStorage.removeItem("accessToken");
     } finally {
       setLoading(false);
     }
