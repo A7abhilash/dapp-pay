@@ -56,7 +56,7 @@ function BlockchainProvider({ children }) {
       //Assign contract to a variable
       const _dAppPayContract = new web3.eth.Contract(
         DAppPay.abi,
-        networkData.addresss
+        networkData.address
       );
       //   console.log(_dAppPayContract);
       setDAppPayContract(_dAppPayContract);
@@ -66,8 +66,20 @@ function BlockchainProvider({ children }) {
     }
   }
 
+  function getErrorMessage(message) {
+    let revertIndex = message.indexOf("revert");
+    // console.log(revertIndex);
+    let slicedMessage = message.slice(revertIndex);
+    // console.log(slicedMessage);
+    let nearestEnd = slicedMessage.indexOf('"');
+    let requiredMessage = slicedMessage.slice(0, nearestEnd);
+    return requiredMessage.replace("revert ", "");
+  }
+
   return (
-    <BlockchainContext.Provider value={{ account, dAppPayContract }}>
+    <BlockchainContext.Provider
+      value={{ account, dAppPayContract, getErrorMessage }}
+    >
       {loading ? <Loading loadingMsg={loadingMsg} /> : children}
     </BlockchainContext.Provider>
   );

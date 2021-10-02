@@ -1,9 +1,9 @@
 import React from "react";
 import { Button } from "react-bootstrap";
 
-function Sidebar({ currentView, setCurrentView, views }) {
+function Topbar({ currentView, setCurrentView, views }) {
   return (
-    <div className="d-flex d-md-block align-items-center justify-content-around">
+    <div className="d-flex align-items-center justify-content-around">
       {views.map((view, index) => (
         <div className="m-1" key={"View-" + view + index}>
           <Button
@@ -21,4 +21,4 @@ function Sidebar({ currentView, setCurrentView, views }) {
   );
 }
 
-export default Sidebar;
+export default Topbar;

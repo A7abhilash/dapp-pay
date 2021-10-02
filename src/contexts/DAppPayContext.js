@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import Loading from "../containers/Loading";
+import { useAuth } from "./AuthContext";
 import { useBlockchain } from "./BlockchainContext";
 
 const DAppPayContext = createContext();
@@ -7,6 +8,7 @@ const DAppPayContext = createContext();
 export const useDAppPay = () => useContext(DAppPayContext);
 
 function DAppPayProvider({ children }) {
+  const { user } = useAuth();
   const { dAppPayContract } = useBlockchain();
   const [loading, setLoading] = useState(true);
   const [loadingMsg, setLoadingMsg] = useState("");
@@ -34,14 +36,19 @@ function DAppPayProvider({ children }) {
   async function loadBlockchainData() {
     try {
       /*? Get user's accounts */
-      const _accountsCount = await dAppPayContract.methods.accountsCount();
+      const _accountsCount = await dAppPayContract.methods
+        .accountsCount()
+        .call();
+      console.log(_accountsCount.toString());
       const _accounts = [];
       const _accountsNumber = [];
       for (let i = 1; i <= _accountsCount; i++) {
-        let _account = await dAppPayContract.methods.accounts(i);
+        let _account = await dAppPayContract.methods.accounts(i).call();
         //   TODO Check with google id and push it to array
-        _accounts.push(_account);
-        _accountsNumber.push(_account.accountNo);
+        if (_account.googleId === user?.googleId) {
+          _accounts.push(_account);
+          _accountsNumber.push(_account.accountNo);
+        }
       }
       console.log("Accounts", _accounts);
       console.log("Account numbers", _accountsNumber);
@@ -49,11 +56,12 @@ function DAppPayProvider({ children }) {
       setUserAccounts(_accountsNumber);
 
       /*? Get user's transactions */
-      const _transactionsCount =
-        await dAppPayContract.methods.transactionsCount();
+      const _transactionsCount = await dAppPayContract.methods
+        .transactionsCount()
+        .call();
       const _transactions = [];
       for (let i = 1; i <= _transactionsCount; i++) {
-        let _transaction = await dAppPayContract.methods.transactions(i);
+        let _transaction = await dAppPayContract.methods.transactions(i).call();
         if (
           _accountsNumber.includes(_transaction.sender) ||
           _accountsNumber.includes(_transaction.receiver)
