@@ -22,7 +22,7 @@ function AuthProvider({ children }) {
     if (token !== null) {
       setAccessToken(token);
     } else {
-      setAccessToken(null);
+      setAccessToken("");
     }
   }, []);
 
@@ -69,9 +69,15 @@ function AuthProvider({ children }) {
     }
   }
 
+  async function logout() {
+    setAccessToken(null);
+    setUser(null);
+    localStorage.removeItem("accessToken");
+  }
+
   return (
     <AuthContext.Provider
-      value={{ accessToken, setAccessToken, user, setUser }}
+      value={{ accessToken, setAccessToken, user, setUser, logout }}
     >
       {loading ? <Loading loadingMsg={loadingMsg} /> : children}
     </AuthContext.Provider>

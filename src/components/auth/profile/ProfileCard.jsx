@@ -3,7 +3,7 @@ import { Button, Card } from "react-bootstrap";
 import { useAuth } from "../../../contexts/AuthContext";
 
 function ProfileCard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <Card bg="light" className="p-0 text-center text-dark">
@@ -23,7 +23,7 @@ function ProfileCard() {
         <Card.Text>{user?.email}</Card.Text>
       </Card.Body>
       <Card.Footer>
-        <Button variant="danger" size="sm">
+        <Button variant="danger" size="sm" onClick={logout}>
           Logout
         </Button>
       </Card.Footer>
