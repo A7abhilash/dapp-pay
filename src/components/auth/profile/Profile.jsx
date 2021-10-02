@@ -2,6 +2,7 @@ import React from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useBlockchain } from "../../../contexts/BlockchainContext";
 import AccountInputs from "./AccountInputs";
+import DisplayMyAccounts from "./DisplayMyAccounts";
 import ProfileCard from "./ProfileCard";
 
 function Profile() {
@@ -39,7 +40,9 @@ function Profile() {
       <div className="col-md-3 mx-1 mx-md-auto p-1">
         <ProfileCard />
       </div>
-      <div className="col-md-4 mx-1 mx-md-auto p-1">List of user accounts</div>
+      <div className="col-md-4 mx-1 mx-md-auto p-1">
+        <DisplayMyAccounts />
+      </div>
       <div className="col-md-4 mx-1 mx-md-auto p-1">
         <AccountInputs submit={createAccount} />
       </div>

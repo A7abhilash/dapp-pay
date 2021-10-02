@@ -12,3 +12,7 @@ body {
 .bg-gray {
   background-color: #313131;
 }
+
+.cursor-pointer {
+  cursor: pointer;
+}

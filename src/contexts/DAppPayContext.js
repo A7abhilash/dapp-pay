@@ -46,6 +46,8 @@ function DAppPayProvider({ children }) {
         let _account = await dAppPayContract.methods.accounts(i).call();
         //   TODO Check with google id and push it to array
         if (_account.googleId === user?.googleId) {
+          let _balance = await window.web3.eth.getBalance(_account.accountNo);
+          _account.balance = window.web3.utils.fromWei(_balance);
           _accounts.push(_account);
           _accountsNumber.push(_account.accountNo);
         }

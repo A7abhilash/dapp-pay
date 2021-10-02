@@ -6,7 +6,7 @@ function ProfileCard() {
   const { user } = useAuth();
 
   return (
-    <Card bg="secondary" className="p-0 text-center">
+    <Card bg="light" className="p-0 text-center text-dark">
       <Card.Header>
         <Card.Title>My Profile</Card.Title>
       </Card.Header>

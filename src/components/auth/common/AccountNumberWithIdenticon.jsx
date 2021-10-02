@@ -3,9 +3,11 @@ import IdenticonAvatar from "./IdenticonAvatar";
 
 function AccountNumberWithIdenticon({ account }) {
   return (
-    <div className="d-flex align-items-center justify-content-center">
-      <div className="mr-2">{account}</div>
+    <div className="d-flex align-items-center">
       <IdenticonAvatar account={account} />
+      <h6 style={{ marginLeft: 10 }} className="card-text">
+        <small>{account}</small>
+      </h6>
     </div>
   );
 }

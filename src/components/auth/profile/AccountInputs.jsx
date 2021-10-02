@@ -31,7 +31,7 @@ function AccountInputs({ mode = "create", data, submit }) {
     // console.log(oldPin, newPin, confirmNewPin);
     if (newPin) {
       if (newPin === confirmNewPin) {
-        submit(accountNo, accountHolderName, dpayId, phoneNo, newPin);
+        submit(accountNo, accountHolderName, dpayId + "@dpay", phoneNo, newPin);
       } else {
         alert("New pin and confirm pin fields are not same");
       }
@@ -92,7 +92,9 @@ function AccountInputs({ mode = "create", data, submit }) {
               value={dpayId}
               onChange={(e) => setDpayId(e.target.value)}
             />
-            <span>@dpay</span>
+            <span style={{ marginLeft: 5 }}>
+              <strong>@dpay</strong>
+            </span>
           </div>
         </Form.Group>
         {/* Create Mode: Set new pin and confirm new pin 
