@@ -71,7 +71,7 @@ contract DAppPay{
 		require(msg.sender != address(0x0), "Account no. is required");
 		require(bytes(_accountHolderName).length > 0, "Account holder name is required");
 		require(bytes(_dpayId).length > 0, "Account dpay id is required");
-		require(_phoneNo != 0, "A valid account phone no(10 digits) is required");
+		require(_phoneNo != 0, "A valid account phone no is required");
 		require(bytes(_googleId).length > 0, "Account google id is required");
 		require(bytes(_pin).length == 4, "Valid account pin(4 digits) is required");
 
@@ -124,11 +124,13 @@ contract DAppPay{
 		_account.isPrimaryAccount = _isPrimaryAccount;
 
 		// If _isPrimaryAccount==true then set _isPrimaryAccount=false in other account's of same user
-		for (uint i = 1; i <= accountsCount; i++) {
-			if(keccak256(bytes(accounts[i].googleId)) == keccak256(bytes(_account.googleId))){
-				if(accounts[i].accountNo != msg.sender){
-					if(accounts[i].isPrimaryAccount){
-						accounts[i].isPrimaryAccount = false;
+		if(_isPrimaryAccount==true){
+			for (uint i = 1; i <= accountsCount; i++) {
+				if(keccak256(bytes(accounts[i].googleId)) == keccak256(bytes(_account.googleId))){
+					if(accounts[i].accountNo != msg.sender){
+						if(accounts[i].isPrimaryAccount){
+							accounts[i].isPrimaryAccount = false;
+						}
 					}
 				}
 			}

@@ -44,7 +44,6 @@ function DAppPayProvider({ children }) {
       const _accountsNumber = [];
       for (let i = 1; i <= _accountsCount; i++) {
         let _account = await dAppPayContract.methods.accounts(i).call();
-        //   TODO Check with google id and push it to array
         if (_account.googleId === user?.googleId) {
           let _balance = await window.web3.eth.getBalance(_account.accountNo);
           _account.balance = window.web3.utils.fromWei(_balance);
@@ -80,7 +79,9 @@ function DAppPayProvider({ children }) {
   }
 
   return (
-    <DAppPayContext.Provider value={{ accounts, userAccounts, transactions }}>
+    <DAppPayContext.Provider
+      value={{ accounts, userAccounts, transactions, loadBlockchainData }}
+    >
       {loading ? <Loading loadingMsg={loadingMsg} /> : children}
     </DAppPayContext.Provider>
   );

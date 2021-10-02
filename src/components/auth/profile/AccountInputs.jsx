@@ -1,42 +1,98 @@
 import React, { useEffect, useState } from "react";
 import { Button, Form } from "react-bootstrap";
-import { useAuth } from "../../../contexts/AuthContext";
 import EnterDPayPin from "../common/EnterDPayPin";
 
-function AccountInputs({ mode = "create", data, submit }) {
-  const { user } = useAuth();
+function AccountInputs({ mode, data, submit }) {
   const [accountNo, setAccountNo] = useState("");
-  const [accountHolderName, setAccountHolderName] = useState(user?.name || "");
+  const [accountHolderName, setAccountHolderName] = useState();
   const [phoneNo, setPhoneNo] = useState("");
-  const [dpayId, setDpayId] = useState(
-    user?.name?.toLowerCase().replaceAll(" ", "") || ""
-  );
+  const [dpayId, setDpayId] = useState("");
   const [oldPin, setOldPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [confirmNewPin, setConfirmNewPin] = useState("");
+  const [isPrimaryAccount, setIsPrimaryAccount] = useState(false);
+
+  const setInitialInputs = () => {
+    setAccountNo("");
+    setAccountHolderName("");
+    setPhoneNo("");
+    setDpayId("");
+    setIsPrimaryAccount(false);
+    erasePinValues();
+  };
+
+  const erasePinValues = () => {
+    setOldPin("");
+    setNewPin("");
+    setConfirmNewPin("");
+  };
 
   useEffect(() => {
     if (data) {
       setAccountNo(data.accountNo);
-      setAccountHolderName(data.accountName);
+      setAccountHolderName(data.accountHolderName);
       setPhoneNo(data.phoneNo);
-      setDpayId(data.dpayId);
-      setOldPin(data.pin);
+      setDpayId(data.dpayId.slice(0, data.dpayId.length - 5));
+      setIsPrimaryAccount(data.isPrimaryAccount);
+      erasePinValues();
+    } else {
+      setInitialInputs();
     }
   }, [data]);
 
-  const handleSubmit = (e) => {
+  const handleCreateNewAccount = (e) => {
     e.preventDefault();
     // console.log(accountNo, accountHolderName, phoneNo, dpayId);
     // console.log(oldPin, newPin, confirmNewPin);
     if (newPin) {
       if (newPin === confirmNewPin) {
         submit(accountNo, accountHolderName, dpayId + "@dpay", phoneNo, newPin);
+        setInitialInputs();
       } else {
         alert("New pin and confirm pin fields are not same");
       }
     } else {
-      alert("Invalid pin!!!");
+      alert("Please set your DPay Pin!");
+    }
+  };
+
+  const handleEditAccount = (e) => {
+    e.preventDefault();
+    // console.log(accountNo, accountHolderName, phoneNo, dpayId);
+    // console.log(oldPin, newPin, confirmNewPin);
+    // console.log(isPrimaryAccount);
+    if (oldPin) {
+      if (newPin) {
+        // If pin is being changed
+        if (newPin === confirmNewPin) {
+          submit(
+            accountNo,
+            accountHolderName,
+            dpayId + "@dpay",
+            phoneNo,
+            oldPin,
+            newPin,
+            isPrimaryAccount
+          );
+          erasePinValues();
+        } else {
+          alert("New pin and confirm pin fields are not same");
+        }
+      } else {
+        // If pin is not being changed
+        submit(
+          accountNo,
+          accountHolderName,
+          dpayId + "@dpay",
+          phoneNo,
+          oldPin,
+          oldPin,
+          isPrimaryAccount
+        );
+        erasePinValues();
+      }
+    } else {
+      alert("Please enter your current DPay Pin!");
     }
   };
 
@@ -45,7 +101,11 @@ function AccountInputs({ mode = "create", data, submit }) {
       <h4 className="text-primary">
         {mode === "create" ? "Create New Account" : "Edit Account"}
       </h4>
-      <Form onSubmit={handleSubmit}>
+      <Form
+        onSubmit={
+          mode === "create" ? handleCreateNewAccount : handleEditAccount
+        }
+      >
         <Form.Group className="my-2">
           <Form.Label className="text-secondary">Account No.</Form.Label>
           <Form.Control
@@ -55,6 +115,7 @@ function AccountInputs({ mode = "create", data, submit }) {
             required
             value={accountNo}
             onChange={(e) => setAccountNo(e.target.value)}
+            readOnly={mode !== "create"}
           />
         </Form.Group>
         <Form.Group className="my-2">
@@ -81,6 +142,22 @@ function AccountInputs({ mode = "create", data, submit }) {
             onChange={(e) => setPhoneNo(e.target.value)}
           />
         </Form.Group>
+        {mode !== "create" && (
+          <Form.Group className="my-2">
+            <Form.Check
+              type="checkbox"
+              label="Set as your primary Account?"
+              className="text-muted"
+              value={isPrimaryAccount}
+              onChange={(e) => {
+                // setIsPrimaryAccount(e.target.value);
+                setIsPrimaryAccount((prev) => !prev);
+                // console.log(e.target.value);
+              }}
+              checked={isPrimaryAccount ? true : false}
+            />
+          </Form.Group>
+        )}
         <Form.Group className="my-2">
           <Form.Label className="text-secondary">DPay Id</Form.Label>
           <div className="d-flex align-items-center">
@@ -100,11 +177,20 @@ function AccountInputs({ mode = "create", data, submit }) {
         {/* Create Mode: Set new pin and confirm new pin 
 		Edit Mode: Enter old pin, Set new pin and confirm new pin */}
         <Form.Group className="my-2">
-          <Form.Label className="text-secondary">DPay Pin</Form.Label>
+          <Form.Label className="text-secondary">
+            DPay Pin
+            {mode === "edit" && (
+              <small className="card-text text-muted">
+                <br />
+                Make sure to enter the current pin of your account even if you
+                are not resetting your account password!
+              </small>
+            )}
+          </Form.Label>
           <div className="d-flex align-items-center">
             {mode !== "create" && (
               <EnterDPayPin
-                text="Enter Old Pin"
+                text="Enter Current Pin"
                 value={oldPin}
                 setValue={setOldPin}
               />

@@ -8,7 +8,7 @@ function ProfileCard() {
   return (
     <Card bg="light" className="p-0 text-center text-dark">
       <Card.Header>
-        <Card.Title>My Profile</Card.Title>
+        <h4 className="text-primary">My Profile</h4>
       </Card.Header>
       <Card.Body>
         <Card.Img
