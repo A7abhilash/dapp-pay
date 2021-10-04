@@ -7,7 +7,7 @@ function DisplayMyAccounts({ mode, editingAccount, setEditingAccount }) {
   return (
     <div>
       <div className="d-flex align-items-center justify-content-between">
-        <h4 className="text-primary">My Accounts</h4>
+        <h4 className="text-info">My Accounts</h4>
         {mode !== "create" && (
           <div
             onClick={() => setEditingAccount(null)}

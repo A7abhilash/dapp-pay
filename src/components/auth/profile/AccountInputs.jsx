@@ -98,7 +98,7 @@ function AccountInputs({ mode, data, submit }) {
 
   return (
     <div>
-      <h4 className="text-primary">
+      <h4 className="text-info">
         {mode === "create" ? "Create New Account" : "Edit Account"}
       </h4>
       <Form
