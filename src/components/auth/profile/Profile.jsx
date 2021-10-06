@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useBlockchain } from "../../../contexts/BlockchainContext";
 import { useDAppPay } from "../../../contexts/DAppPayContext";
+import Loader from "../common/Loader";
 import AccountInputs from "./AccountInputs";
 import DisplayMyAccounts from "./DisplayMyAccounts";
 import ProfileCard from "./ProfileCard";
@@ -13,8 +14,18 @@ function Profile() {
   const [editingAccount, setEditingAccount] = useState(null);
   const [mode, setMode] = useState(editingAccount === null ? "create" : "edit");
 
+  const [loadingMsg, setLoadingMsg] = useState("");
+  const [color, setColor] = useState("");
+
+  useEffect(() => {
+    if (!loadingMsg) {
+      setColor("");
+    }
+  }, [loadingMsg]);
+
   useEffect(() => {
     setMode(editingAccount === null ? "create" : "edit");
+    setLoadingMsg("");
   }, [editingAccount]);
 
   async function createAccount(
@@ -25,21 +36,28 @@ function Profile() {
     pin
   ) {
     try {
+      setLoadingMsg("Creating new account...");
+      setColor("warning");
       await dAppPayContract.methods
         .createAccount(accountHolderName, dpayId, phoneNo, user.googleId, pin)
         .send({ from: accountNo })
         .on("receipt", () => {
+          setColor("success");
+          setLoadingMsg("Successfully created new account!!!");
           loadBlockchainData();
         });
     } catch (error) {
       // console.log(error);
+      setColor("danger");
       let message = error.message;
       if (message.includes("revert")) {
         message = getErrorMessage(message);
-        alert(message);
-      } else {
-        alert(message);
       }
+      setLoadingMsg(message);
+    } finally {
+      setTimeout(() => {
+        setLoadingMsg("");
+      }, 2500);
     }
   }
 
@@ -53,6 +71,8 @@ function Profile() {
     isPrimaryAccount
   ) {
     try {
+      setLoadingMsg("Editing account...");
+      setColor("warning");
       await dAppPayContract.methods
         .editAccount(
           accountHolderName,
@@ -65,16 +85,21 @@ function Profile() {
         .send({ from: accountNo })
         .on("receipt", () => {
           loadBlockchainData();
+          setColor("success");
+          setLoadingMsg("Successfully edited your account!!!");
         });
     } catch (error) {
       // console.log(error);
+      setColor("danger");
       let message = error.message;
       if (message.includes("revert")) {
         message = getErrorMessage(message);
-        alert(message);
-      } else {
-        alert(message);
       }
+      setLoadingMsg(message);
+    } finally {
+      setTimeout(() => {
+        setLoadingMsg("");
+      }, 2500);
     }
   }
 
@@ -98,6 +123,7 @@ function Profile() {
           mode={mode}
         />
       </div>
+      <Loader loadingMsg={loadingMsg} color={color} />
     </div>
   );
 }

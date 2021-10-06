@@ -19,7 +19,7 @@ function SearchAccount({
     setSearchedAccount(null);
   }, [selectedMode]);
 
-  const getAppropriateMethod = (param) => {
+  const getRequiredMethod = (param) => {
     switch (selectedMode.mode) {
       case "accountNo":
         return dAppPayContract.methods
@@ -50,15 +50,15 @@ function SearchAccount({
     }
     try {
       setMessage("Searching accounts...");
-      let _searchedAccount = await getAppropriateMethod(query);
+      let _searchedAccount = await getRequiredMethod(query);
       if (_searchedAccount.accountId !== "0") {
         setMessage("");
         // console.log(_searchedAccount);
-        if (_searchedAccount.accountNo === account) {
-          setMessage("It's your current account connected to MetaMask.");
-        } else {
-          setSearchedAccount(_searchedAccount);
-        }
+        // if (_searchedAccount.accountNo === account) {
+        //   setMessage("It's your current account connected to MetaMask.");
+        // } else {
+        // }
+        setSearchedAccount(_searchedAccount);
       } else {
         setMessage("No accounts found");
       }
