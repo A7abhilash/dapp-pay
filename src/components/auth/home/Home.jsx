@@ -27,7 +27,7 @@ const modes = [
 
 function Home() {
   const { account, dAppPayContract, getErrorMessage } = useBlockchain();
-  const { loadBlockchainData } = useDAppPay();
+  const { loadBlockchainData, userAccounts } = useDAppPay();
   const [selectedMode, setSelectedMode] = useState(modes[0]);
   const [type, setType] = useState("transfer");
   const [searchedAccount, setSearchedAccount] = useState(null);
@@ -49,6 +49,10 @@ function Home() {
     // console.log("sendAmount");
     // console.log(amount, pin);
     try {
+      if (!userAccounts.includes(account)) {
+        alert("Check your account connected to MetaMask and try again!");
+        return;
+      }
       setLoadingMsg("Processing Transaction...");
       setColor("warning");
       await dAppPayContract.methods

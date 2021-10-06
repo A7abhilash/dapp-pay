@@ -63,15 +63,16 @@ function DAppPayProvider({ children }) {
       const _transactions = [];
       for (let i = 1; i <= _transactionsCount; i++) {
         let _transaction = await dAppPayContract.methods.transactions(i).call();
-        if (
-          _accountsNumber.includes(_transaction.sender) ||
-          _accountsNumber.includes(_transaction.receiver)
-        ) {
+        if (_accountsNumber.includes(_transaction.sender)) {
+          _transaction["sent-by-me"] = true;
+          _transactions.push(_transaction);
+        } else if (_accountsNumber.includes(_transaction.receiver)) {
+          _transaction["sent-by-me"] = false;
           _transactions.push(_transaction);
         }
       }
       console.log("Transactions", _transactions);
-      setTransactions(_transactions);
+      setTransactions(_transactions.reverse());
     } catch (error) {
       console.log(error);
       alert("Couldn't load your data, please try again");
