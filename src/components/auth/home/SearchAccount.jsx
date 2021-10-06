@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Card, Form } from "react-bootstrap";
 import { useBlockchain } from "../../../contexts/BlockchainContext";
-import AccountNumberWithIdenticon from "./AccountNumberWithIdenticon";
+import AccountNumberWithIdenticon from "../common/AccountNumberWithIdenticon";
 
 function SearchAccount({
   selectedMode,

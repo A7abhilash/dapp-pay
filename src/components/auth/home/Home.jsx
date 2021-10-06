@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
-import SearchAccount from "../common/SearchAccount";
+import { useBlockchain } from "../../../contexts/BlockchainContext";
+import { useDAppPay } from "../../../contexts/DAppPayContext";
+import Loader from "../common/Loader";
+import MakePaymentModal from "./MakePaymentModal";
+import SearchAccount from "./SearchAccount";
 
 const modes = [
   {
@@ -22,6 +26,8 @@ const modes = [
 ];
 
 function Home() {
+  const { account, dAppPayContract, getErrorMessage } = useBlockchain();
+  const { loadBlockchainData } = useDAppPay();
   const [selectedMode, setSelectedMode] = useState(modes[0]);
   const [type, setType] = useState("transfer");
   const [searchedAccount, setSearchedAccount] = useState(null);
@@ -29,6 +35,53 @@ function Home() {
 
   const openModal = () => setMakeTransaction(true);
   const closeModal = () => setMakeTransaction(false);
+
+  const [loadingMsg, setLoadingMsg] = useState("");
+  const [color, setColor] = useState("");
+
+  useEffect(() => {
+    if (!loadingMsg) {
+      setColor("");
+    }
+  }, [loadingMsg]);
+
+  const sendAmount = async (amount, pin) => {
+    // console.log("sendAmount");
+    // console.log(amount, pin);
+    try {
+      setLoadingMsg("Processing Transaction...");
+      setColor("warning");
+      await dAppPayContract.methods
+        .sendAmount(searchedAccount?.accountNo, pin)
+        .send({
+          from: account,
+          value: window.web3.utils.toWei(amount, "ether"),
+        })
+        .on("receipt", () => {
+          loadBlockchainData();
+          setColor("success");
+          setLoadingMsg("Transaction success!!!");
+        });
+    } catch (error) {
+      // console.log(error);
+      setColor("danger");
+      let message = error.message;
+      if (message.includes("revert")) {
+        message = getErrorMessage(message);
+      }
+      setLoadingMsg(message);
+    } finally {
+      setTimeout(() => {
+        setLoadingMsg("");
+      }, 2500);
+    }
+  };
+
+  const requestAmount = async (amount, pin) => {
+    console.log("reqAmount");
+    console.log(amount, pin);
+    // covert amount to wei
+  };
 
   return (
     <div className="row">
@@ -87,8 +140,13 @@ function Home() {
           searchedAccount={searchedAccount}
           setSearchedAccount={setSearchedAccount}
         />
-        {/* Make payment modal */}
-        {/* Loader modal */}
+        <MakePaymentModal
+          visible={makeTransaction}
+          closeModal={closeModal}
+          receiverAccountNo={searchedAccount?.accountNo}
+          handleTransaction={type === "transfer" ? sendAmount : requestAmount}
+        />
+        <Loader loadingMsg={loadingMsg} color={color} />
       </div>
     </div>
   );
