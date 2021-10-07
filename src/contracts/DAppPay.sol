@@ -147,6 +147,9 @@ contract DAppPay{
 		// Make sure receiver account address exists
 		require(accountNumbers[_receiver], "Receiver account number is invalid!" );
 
+		// Make transaction amount is not 0
+		require(msg.value != 0, "Transaction amount is 0!" );
+
 		// Make sure account pin is same as the pin entered by the user(sender)
 		require(_getAccountPin(msg.sender) == keccak256(bytes(_pin)), "Pin is wrong!");
 
@@ -178,6 +181,9 @@ contract DAppPay{
 		require(requestId > 0 && requestId <= requestsCount, "Invalid request id");
 
 		Request memory _request = requests[requestId];
+
+		// Make sure request amount is correct
+		require(!_request.amount == msg.value, "Request amount is incorrect");
 
 		// Make sure request is not rejected
 		require(!_request.isRejected, "Request is already rejected");

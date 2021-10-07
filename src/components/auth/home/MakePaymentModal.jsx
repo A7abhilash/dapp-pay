@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
 import EnterDPayPin from "../common/EnterDPayPin";
 
@@ -7,14 +7,27 @@ function MakePaymentModal({
   closeModal,
   receiverAccountNo,
   handleTransaction,
+  type,
+  value = null,
 }) {
-  const [amount, setAmount] = useState();
+  const [amount, setAmount] = useState(0);
   const [pin, setPin] = useState("");
+
+  useEffect(() => {
+    if (visible) {
+      setAmount(value ? value : 0);
+      setPin("");
+    }
+  }, [visible, value]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (amount && pin) {
-      handleTransaction(amount.toString(), pin);
+    if (amount) {
+      if (type === "transfer" && pin) {
+        handleTransaction(amount.toString(), pin);
+      } else {
+        handleTransaction(amount.toString());
+      }
       handleClose();
     }
   };
@@ -50,6 +63,7 @@ function MakePaymentModal({
                 placeholder="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value.toString())}
+                readOnly={value !== null}
               />
               <div className="input-group-append">
                 <div className="input-group-text">ETH</div>
@@ -59,9 +73,15 @@ function MakePaymentModal({
         </form>
       </Modal.Body>
       <Modal.Footer>
-        <EnterDPayPin text="Enter DPay Pin" value={pin} setValue={setPin} />
-        <Button size="sm" onClick={handleSubmit} disabled={!pin || !amount}>
-          Send
+        {type === "transfer" && (
+          <EnterDPayPin text="Enter DPay Pin" value={pin} setValue={setPin} />
+        )}
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={type === "transfer" && !pin}
+        >
+          {type === "transfer" ? "Send" : "Request"}
         </Button>
       </Modal.Footer>
     </Modal>

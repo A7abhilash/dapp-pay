@@ -11,7 +11,7 @@ function Loader({ loadingMsg, color }) {
     >
       <Modal.Body className="text-center">
         {color === "warning" && (
-          <Spinner animation="grow" variant="warning" size={50} />
+          <Spinner animation="grow" variant="warning" size={100} />
         )}
         {color === "success" && (
           <svg
@@ -24,8 +24,8 @@ function Loader({ loadingMsg, color }) {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 384 512"
             style={{
-              width: 50,
-              height: 50,
+              width: 100,
+              height: 100,
             }}
           >
             <path
@@ -45,8 +45,8 @@ function Loader({ loadingMsg, color }) {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 512 512"
             style={{
-              width: 50,
-              height: 50,
+              width: 100,
+              height: 100,
             }}
           >
             <path

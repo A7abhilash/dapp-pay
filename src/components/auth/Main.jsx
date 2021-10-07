@@ -3,8 +3,9 @@ import Topbar from "./Topbar";
 import Home from "./home/Home";
 import Profile from "./profile/Profile";
 import History from "./history/History";
+import Requests from "./requests/Requests";
 
-const views = ["Home", "Profile", "Transactions"];
+const views = ["Home", "Profile", "Transactions", "Requests"];
 function Main() {
   const [currentView, setCurrentView] = useState(views[0]);
 
@@ -16,6 +17,8 @@ function Main() {
         return <Profile />;
       case views[2]:
         return <History />;
+      case views[3]:
+        return <Requests />;
       default:
         return null;
     }

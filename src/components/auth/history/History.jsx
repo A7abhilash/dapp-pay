@@ -10,7 +10,10 @@ function History() {
       <div className="col-md-6 mx-1 mx-md-auto p-1">
         {transactions.length ? (
           transactions.map((transaction) => (
-            <div className="bg-gray my-2 border-rounded p-2">
+            <div
+              key={transaction.time}
+              className="bg-gray my-2 border-rounded p-2"
+            >
               <AccountNumberWithIdenticon
                 account={
                   transaction["sent-by-me"]
@@ -20,7 +23,7 @@ function History() {
               />
               <div className="d-flex align-items-end justify-content-between mt-2">
                 <div>
-                  <p className="text-primary my-0">
+                  <p className="text-warning my-0">
                     {window.web3.utils.fromWei(transaction.amount, "ether")} ETH
                   </p>
                   <small className="text-muted">

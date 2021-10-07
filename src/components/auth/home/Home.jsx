@@ -49,7 +49,10 @@ function Home() {
     // console.log("sendAmount");
     // console.log(amount, pin);
     try {
-      if (!userAccounts.includes(account)) {
+      if (
+        !userAccounts.includes(account) ||
+        account === searchedAccount?.accountNo
+      ) {
         alert("Check your account connected to MetaMask and try again!");
         return;
       }
@@ -81,10 +84,43 @@ function Home() {
     }
   };
 
-  const requestAmount = async (amount, pin) => {
+  const requestAmount = async (amount) => {
     console.log("reqAmount");
-    console.log(amount, pin);
+    console.log(amount);
     // covert amount to wei
+    try {
+      if (
+        !userAccounts.includes(account) ||
+        account === searchedAccount?.accountNo
+      ) {
+        alert("Check your account connected to MetaMask and try again!");
+        return;
+      }
+      setLoadingMsg("Requesting amount...");
+      setColor("warning");
+      await dAppPayContract.methods
+        .requestAmount(searchedAccount?.accountNo, amount)
+        .send({
+          from: account,
+        })
+        .on("receipt", () => {
+          loadBlockchainData();
+          setColor("success");
+          setLoadingMsg("Amount has been requested!!!");
+        });
+    } catch (error) {
+      // console.log(error);
+      setColor("danger");
+      let message = error.message;
+      if (message.includes("revert")) {
+        message = getErrorMessage(message);
+      }
+      setLoadingMsg(message);
+    } finally {
+      setTimeout(() => {
+        setLoadingMsg("");
+      }, 2500);
+    }
   };
 
   return (
@@ -149,6 +185,7 @@ function Home() {
           closeModal={closeModal}
           receiverAccountNo={searchedAccount?.accountNo}
           handleTransaction={type === "transfer" ? sendAmount : requestAmount}
+          type={type}
         />
         <Loader loadingMsg={loadingMsg} color={color} />
       </div>

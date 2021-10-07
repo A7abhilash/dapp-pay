@@ -18,6 +18,8 @@ function DAppPayProvider({ children }) {
   const [userAccounts, setUserAccounts] = useState([]);
   //   User's transaction list
   const [transactions, setTransactions] = useState([]);
+  //   User's request list
+  const [requests, setRequests] = useState([]);
 
   useEffect(() => {
     if (!loading) {
@@ -73,6 +75,26 @@ function DAppPayProvider({ children }) {
       }
       console.log("Transactions", _transactions);
       setTransactions(_transactions.reverse());
+
+      /*? Get user's transactions */
+      const _requestsCount = await dAppPayContract.methods
+        .requestsCount()
+        .call();
+      const _requests = [];
+      for (let i = 1; i <= _requestsCount; i++) {
+        let _request = await dAppPayContract.methods.requests(i).call();
+        if (_accountsNumber.includes(_request.requestingFrom)) {
+          _request["id"] = i;
+          _request["requested-by-me"] = true;
+          _requests.push(_request);
+        } else if (_accountsNumber.includes(_request.requestingTo)) {
+          _request["id"] = i;
+          _request["requested-by-me"] = false;
+          _requests.push(_request);
+        }
+      }
+      console.log("Requests", _requests);
+      setRequests(_requests.reverse());
     } catch (error) {
       console.log(error);
       alert("Couldn't load your data, please try again");
@@ -81,7 +103,13 @@ function DAppPayProvider({ children }) {
 
   return (
     <DAppPayContext.Provider
-      value={{ accounts, userAccounts, transactions, loadBlockchainData }}
+      value={{
+        accounts,
+        userAccounts,
+        transactions,
+        requests,
+        loadBlockchainData,
+      }}
     >
       {loading ? <Loading loadingMsg={loadingMsg} /> : children}
     </DAppPayContext.Provider>
