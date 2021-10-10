@@ -182,9 +182,6 @@ contract DAppPay{
 
 		Request memory _request = requests[requestId];
 
-		// Make sure request amount is correct
-		require(!_request.amount == msg.value, "Request amount is incorrect");
-
 		// Make sure request is not rejected
 		require(!_request.isRejected, "Request is already rejected");
 
@@ -245,13 +242,27 @@ contract DAppPay{
 	}
 
 	function _getAccountUsingPhoneNumber(uint _phoneNo) public view returns(Account memory){
+		Account memory _account;
+		bool isAccountExist;
 		for(uint i=1; i<=accountsCount; i++){
 			if(accounts[i].phoneNo == _phoneNo){
-				Account memory _account = accounts[i];
+				_account = accounts[i];
 				delete _account.pin;
-				return _account;
+				isAccountExist=true;
+				// return _account;
 			}
 		}
+
+		if(isAccountExist){
+			for(uint i=1; i<=accountsCount; i++){
+				if(accounts[i].phoneNo == _phoneNo && accounts[i].isPrimaryAccount){
+					_account = accounts[i];
+					delete _account.pin;
+					return _account;
+				}
+			}
+		}
+		return _account;
 	}
 
 	function _getAccountPin(address _accountNo) private view onlyExistingAccount returns(bytes32){

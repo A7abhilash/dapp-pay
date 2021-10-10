@@ -19,10 +19,6 @@ const modes = [
     title: "DPay Id",
     mode: "dpayId",
   },
-  {
-    title: "Self Account",
-    mode: "self",
-  },
 ];
 
 function Home() {
