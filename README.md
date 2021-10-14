@@ -56,3 +56,7 @@ alt="Transaction modal"
 style="border-radius:5px;"
 />
 </div>
+
+```js
+PS: Here amount refers to ethers!!!
+```
